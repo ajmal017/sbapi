@@ -11,6 +11,18 @@
 |
 */
 
+header("Access-Control-Allow-Origin: *");
+
 $router->get('/', function () use ($router) {
-    return $router->app->version();
+    return abort(404);
+});
+
+$router->group(['prefix' => 'v1'], function () use ($router) {
+	//instruments
+	$router->get('/instrument/{code}', "InstrumentController@index");
+	$router->get('/instrument/{code}/intraday', "InstrumentController@intraday");
+
+	//news 
+	$router->get('/news', "NewsController@index");
+
 });
