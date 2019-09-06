@@ -2,13 +2,30 @@
 
 namespace App\Http\Controllers;
 use App\Instrument;
+use App\Market;
 use Illuminate\Http\Request;
 class InstrumentController extends Controller
 {
     public function index($code)
     {
         $code = strtoupper($code);
-        return Instrument::find($code);
+        return $this->instruments()->where('instrument_code', $code)->orderBy("data_banks_intradays.id", "desc")->first();
+    }
+
+    public function all()
+    {
+        return $this->instruments()->get()->keyBy('code');
+    }
+
+    public function taChart(Request $request)
+    {
+        if($request->has('TickerSymbol'))
+        {
+            $chart = new \App\Classes\Chart();
+            return response()->make($chart->html());        
+        }
+        return abort(404);
+
     }
 
 
@@ -30,10 +47,26 @@ class InstrumentController extends Controller
                 $data[1][] = $row->new_volume;
                 $data[2][] = strtotime($row->lm_date_time);
             }
-            if(count($data)> 10){
+            if(count($data[0])> 1000){
                 return false;
             }
         });
         return $data;
+    }
+
+
+    public function history(Request $request, $code)
+    {
+        // avilable resulations: D, 1M, 5M
+        $data = [];
+        $code = strtoupper($code);
+        $instrument = Instrument::find($code);
+        return $instrument->getHistoryByRequest($request);
+    }
+
+    public function instruments()
+    {
+        $instruments = Instrument::getAll();
+        return $instruments;
     }
 }

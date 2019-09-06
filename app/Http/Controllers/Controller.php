@@ -6,5 +6,8 @@ use Laravel\Lumen\Routing\Controller as BaseController;
 
 class Controller extends BaseController
 {
-    //
+	public function response($code = 200, $message = "Success")
+	{
+		return ['success' => ["code" => $code, "message" => $message ]];
+	}
 }

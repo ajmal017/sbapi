@@ -1,0 +1,27 @@
+{
+  "name": "sbapi",
+  "version": "1.0.0",
+  "description": "socket app",
+  "main": "serve.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aisbd/sbapi.git"
+  },
+  "author": "Selim",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aisbd/sbapi/issues"
+  },
+  "homepage": "https://github.com/aisbd/sbapi#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^2.2.0"
+  }
+}
