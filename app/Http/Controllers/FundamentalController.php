@@ -14,7 +14,7 @@ class FundamentalController extends Controller
                                 'authorized_capital',
                                 'reserve_and_surp',
                                 'total_no_securities',
-                                'share_percentage_public',
+                                'public_share_per',
                                 'dsex_listed',
                                 'ds30_listed',
                                 'dses_listed',
@@ -37,5 +37,34 @@ class FundamentalController extends Controller
                             ->where('instrument_code', '!=', null)
                             ->get()->groupBy(['code', 'meta_key']);
         return $data;
+    }
+
+    public function history($symbol, $key)
+    {
+        $key = explode(',', $key);
+        $groupBy = "meta_key";
+        if(app('request')->has('groupBy')){
+            $groupBy = app('request')->groupBy;
+        }
+        $data = Fundamental::whereIn('meta_key', $key)
+                            ->select('instrument_code as code', 'meta_key', 'meta_value', 'meta_date')
+                            ->leftJoin('instruments', 'instruments.id', 'instrument_id')
+                            ->leftJoin('metas', 'metas.id', 'meta_id')
+                            ->where('instrument_code', $symbol)
+                            ->orderBy('meta_date', 'desc')
+                            ->get()->groupBy(['code', $groupBy]);
+        return $data;        
+    }
+
+    public function show($key)
+    {
+        $data = Fundamental::where('meta_key', $key)
+                            ->where('is_latest', 1)
+                            ->select('instrument_code as code', 'meta_key', 'meta_value', 'meta_date')
+                            ->leftJoin('instruments', 'instruments.id', 'instrument_id')
+                            ->leftJoin('metas', 'metas.id', 'meta_id')
+                            ->where('instrument_code', '!=', null)
+                            ->get()->groupBy(['code', 'meta_key']);
+        return $data;      
     }
 }

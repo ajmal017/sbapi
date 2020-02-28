@@ -2,7 +2,7 @@
 
 namespace App;
 use Illuminate\Database\Eloquent\Model;
-
+use App\TradeSummary;
 /**
  * 
  */
@@ -21,6 +21,11 @@ class Market extends Model
 	public function getBatchAttribute()
     {
         return $this->data_bank_intraday_batch;
+    }
+
+    public function trades()
+    {
+    	return $this->hasOne(TradeSummary::class)->orderBy('id', 'desc');
     }
 
 

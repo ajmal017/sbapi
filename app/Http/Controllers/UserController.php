@@ -121,4 +121,23 @@ class UserController extends Controller
             $user = User::where('email', $request->email)->firstOrFail();
              //send reset password email
     }
+
+
+    public function monitorInstruments(Request $request)
+    {
+        $instruments = $request->user()->settings()->where('key', 'monitor_instruments')->first();
+        $instruments = explode(',', $instruments->value);
+        $instruments = \App\Instrument::whereIn('id', $instruments)->select('instrument_code as code')->get();
+        return $instruments;
+
+    }
+
+    public function monitorInstrumentsSave(Request $request)
+    {
+        $instruments = explode(',', $request->instruments);
+        $ids = \App\Instrument::whereIn('instrument_code', $instruments)->select('id')->get()->pluck('id')->toArray();
+        $instruments =  join(",", $ids);
+        $request->user()->settings()->where('key', 'monitor_instruments')->update(['value' => $instruments]);
+        return $instruments;
+    }
 }

@@ -14,7 +14,7 @@ class InstrumentController extends Controller
 
     public function all()
     {
-        return $this->instruments()->get()->keyBy('code');
+        return $this->instruments()->orderBy('code', 'asc')->get()->keyBy('code');
     }
 
     public function taChart(Request $request)
@@ -26,6 +26,12 @@ class InstrumentController extends Controller
         }
         return abort(404);
 
+    }
+
+    public function news(Request $request, $code)
+    {
+        $instrument = Instrument::find($code);
+        return $instrument->news()->orderBy('news.id', 'desc')->paginate(10);
     }
 
 
@@ -57,7 +63,7 @@ class InstrumentController extends Controller
 
     public function history(Request $request, $code)
     {
-        // avilable resulations: D, 1M, 5M
+        // avilable resulations: D, 1, 5
         $data = [];
         $code = strtoupper($code);
         $instrument = Instrument::find($code);
@@ -68,5 +74,37 @@ class InstrumentController extends Controller
     {
         $instruments = Instrument::getAll();
         return $instruments;
+    }
+
+    public function corporateActions($symbol)
+    {
+        $instrument = Instrument::find($symbol);
+        return $instrument->corporateActions;
+    }
+
+    public function highLow(Request $request, $code)
+    {
+        $range = $request->range;
+        if(empty($range)){
+            $range = 365;
+        }
+        $date = date("Y-m-d", strtotime($range." days ago"));
+        $instrument = Instrument::find($code);
+        $result = $instrument->eod()->where('date', '>=', $date)->selectRaw('max(high) as high, min(low) as low')->first();
+        return $result;
+        
+    }
+
+    public function se()
+    {
+       // return $data = Instrument::where('active', 1)->with('eod')->where('date', date('Y-m-d'))->get();
+        $data = collect(\DB::select("select * from instruments left join data_banks_eods on data_banks_eods.instrument_id = instruments.id  where active = 1 and data_banks_eods.date = '".date('Y-m-d')."' and sector_list_id not in (23, 24) "));
+       
+        $sorted = $data->sortBy(function ($symbol, $key) {
+            return  ($symbol->tradevalues * 1000)/$symbol->trade;
+        });   
+        return $sorted->values()->all();     
+        return ('ss');
+ 
     }
 }

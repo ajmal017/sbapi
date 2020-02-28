@@ -2,6 +2,7 @@
 
 namespace App;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * 
@@ -11,10 +12,21 @@ class Instrument extends Model
 	protected $primaryKey = "instrument_code";
 	public $incrementing = false;
 
-	public function intraday()
+
+    public function news()
+    {
+        return $this->hasMany(News::class, 'instrument_id', 'id');
+    }
+
+	public function corporateActions()
 	{
-		return $this->hasMany(\App\Intraday::class, 'instrument_id', 'id');
+		return $this->hasMany(\App\CorporateAction::class, 'instrument_id', 'id');
 	}
+
+    public function intraday()
+    {
+        return $this->hasMany(\App\Intraday::class, 'instrument_id', 'id');
+    }
 
     public function eod()
     {
@@ -23,7 +35,7 @@ class Instrument extends Model
 
 	public static function getAll()
 	{
-        $instruments = self::select("instrument_code as code", "data_banks_intradays.market_id", "sector_list_id as sector_id", "name", "quote_bases as category", "open_price as open", "high_price as high", "low_price as low", "close_price as close", "yday_close_price as yday_close", "total_trades as trades", "total_volume as volume", "total_value as value", "lm_date_time as updated_at" )->where('active', 1)->leftJoin('data_banks_intradays', function ($join)
+        $instruments = self::select("instrument_code as code", "data_banks_intradays.market_id", "sector_list_id as sector_id", "name", "quote_bases as category", "open_price as open", "high_price as high", "low_price as low", "close_price as close", "yday_close_price as yday_close", "total_trades as trades", "total_volume as volume", "total_value as value", "lm_date_time as updated_at", "instruments.id as id" )->where('active', 1)->leftJoin('data_banks_intradays', function ($join)
         {
             $join->on("data_banks_intradays.instrument_id", "instruments.id");
             if(!app("request")->has("date") && !app('request')->has('before')){
@@ -64,7 +76,8 @@ class Instrument extends Model
 
     public function getHistoryByRequest($request)
     {
-        // avilable resolutions: D, 5, 15, 30, 1H, 2H, 3H, 1W, 1M
+        $data = [];
+        // avilable resolutions: D, 1, 5, 15, 30, 1H, 2H, 3H, 1W, 1M
 
         //set resolution
          $resolution = "D";
@@ -78,7 +91,13 @@ class Instrument extends Model
             $in = $this->eod();
             $in->orderBy('date', 'desc')->limit(200);
             // return $this->getFiveMinutesHistory()
-                break;
+            break;
+            case '1':
+            $in = $this->intraday()->limit(2000);
+            $in->orderBy('id', 'desc')->selectRaw("DISTINCT(trade_time), data_banks_intradays.*")
+            // ->where('new_volume', '!=', 0)
+            ;
+            break;
             default:
             $applyFloor = true;
             $in = $this->intraday()->limit(2000);
@@ -102,6 +121,14 @@ class Instrument extends Model
         $sortedDates = [];
 
         $intraday = $in->get();
+
+        // dd(json_decode(Redis::get('EOD.Adjusted.KPCL')));
+        // dd($intraday[0]);
+        $applyFloor = false;
+        $intraday = json_decode(Redis::get('EOD.Adjusted.'.$this->instrument_code));
+       //  dump(date("Y-m-d H:i:s", 1581444000));
+       // dump(date("y-m-d H:i:s"));
+       //  dd($intraday[0]);
             // intraday table rows
             // foreach ($intraday as $row) {
             //     $data[0][] = $row->open_price;
@@ -114,6 +141,8 @@ class Instrument extends Model
 
             //eod table rows
             // $intraday->reverse();
+
+            // dd($this->id);
             if($applyFloor){
                 //have to floor in resolution
                 foreach ($intraday as $row) {
@@ -167,7 +196,8 @@ class Instrument extends Model
                     $data[2][] = $row->low;
                     $data[3][] = $row->close;
                     $data[4][] = $row->volume;
-                    $data[5][] = strtotime($row->date);
+                    $data[5][] = $row->date_timestamp;
+                    // $data[5][] = strtotime($row->date);
                 }
             }
 

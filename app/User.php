@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Laravel\Passport\HasApiTokens;
+use App\Portfolio;  
+use App\UserSettings;
+use App\Watchlist;
 
 class User extends Model implements AuthenticatableContract, AuthorizableContract
 {
@@ -38,5 +41,20 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
             return "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
         }
         return Storage::url($value);
+    }
+
+    public function portfolios()
+    {
+        return $this->hasMany(Portfolio::class);
+    }
+
+    public function settings()
+    {
+        return $this->hasMany(UserSettings::class);
+    }
+
+    public function watchlist()
+    {
+        return $this->hasMany(Watchlist::class);
     }
 }
